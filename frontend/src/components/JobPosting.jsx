@@ -1,23 +1,31 @@
-import React, { useState } from 'react';
+
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Switch from "react-switch"; // Install react-switch with `npm install react-switch`
 
 function JobPosting() {
   const [formData, setFormData] = useState({
-    company_name: '',
-    job_description: '',
-    role: '',
+    company_name: "",
+    job_description: "",
+    role: "",
     primary_skills: 33,
     secondary_skills: 33,
     other_skills: 34,
-    primary_skills_name: '',
-    secondary_skills_name: '',
-    other_skills_name: '',
-    package: '',
-    stipend_amount: ''
+    primary_skills_name: "",
+    secondary_skills_name: "",
+    other_skills_name: "",
+    research_oriented: false,
+    experience_required: false,
+    experience_years: 0,
+    hackathon_participation: false,
+    require_certifications: false,
+    certifications: "", // Add certifications field
+    package: "",
+    stipend_amount: "",
   });
 
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
@@ -25,44 +33,50 @@ function JobPosting() {
     const { name, value } = event.target;
     const newValue = parseInt(value, 10);
 
-    const total = formData.primary_skills + formData.secondary_skills + formData.other_skills;
+    const total =
+      formData.primary_skills +
+      formData.secondary_skills +
+      formData.other_skills;
 
-    // Find the other two sliders
     const otherSliders = {
-        primary_skills: ['secondary_skills', 'other_skills'],
-        secondary_skills: ['primary_skills', 'other_skills'],
-        other_skills: ['primary_skills', 'secondary_skills'],
+      primary_skills: ["secondary_skills", "other_skills"],
+      secondary_skills: ["primary_skills", "other_skills"],
+      other_skills: ["primary_skills", "secondary_skills"],
     };
 
     const [slider1, slider2] = otherSliders[name];
-
-    // Calculate the total of the other two sliders
     const otherTotal = formData[slider1] + formData[slider2];
 
     if (total !== 100) {
-        // Adjust the other two sliders proportionally
-        const remainingPercentage = 100 - newValue;
+      const remainingPercentage = 100 - newValue;
 
-        const slider1NewValue = Math.round((formData[slider1] / otherTotal) * remainingPercentage);
-        const slider2NewValue = 100 - (newValue + slider1NewValue);
+      const slider1NewValue = Math.round(
+        (formData[slider1] / otherTotal) * remainingPercentage
+      );
+      const slider2NewValue = 100 - (newValue + slider1NewValue);
 
-        setFormData((prevData) => ({
-            ...prevData,
-            [name]: newValue,
-            [slider1]: slider1NewValue,
-            [slider2]: slider2NewValue,
-        }));
+      setFormData((prevData) => ({
+        ...prevData,
+        [name]: newValue,
+        [slider1]: slider1NewValue,
+        [slider2]: slider2NewValue,
+      }));
     } else {
-        // Just update the value for the current slider
-        setFormData((prevData) => ({
-            ...prevData,
-            [name]: newValue,
-        }));
+      setFormData((prevData) => ({
+        ...prevData,
+        [name]: newValue,
+      }));
     }
 
-    setError('');
-};
+    setError("");
+  };
 
+  const handleToggle = (fieldName) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      [fieldName]: !prevData[fieldName],
+    }));
+  };
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -70,51 +84,43 @@ function JobPosting() {
       ...prevData,
       [name]: value,
     }));
-    setError('');
+    setError("");
+  };
+
+  const handleExperienceSlider = (value) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      experience_years: value,
+    }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     try {
-      const response = await fetch('http://localhost:5000/job-posting', {
-        method: 'POST',
+      const response = await fetch("http://localhost:5000/job-posting", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
         const errorMessage = await response.json();
-        throw new Error(errorMessage.message || 'Failed to create job posting.');
+        throw new Error(errorMessage.message || "Failed to create job posting.");
       }
 
       const data = await response.json();
       setMessage(data.message);
-      setFormData({
-        company_name: '',
-        job_description: '',
-        role: '',
-        primary_skills: 33,
-        secondary_skills: 33,
-        other_skills: 34,
-        primary_skills_name: '',
-        secondary_skills_name: '',
-        other_skills_name: '',
-        package: '',
-        stipend_amount: ''
-      });
-
       setTimeout(() => {
         navigate("/hr-dashboard");
       }, 2000);
-
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
       setError(error.message);
-      setMessage('');
+      setMessage("");
     }
   };
 
@@ -148,33 +154,7 @@ function JobPosting() {
           style={styles.input}
           required
         />
-        <input
-          type="text"
-          name="primary_skills_name"
-          value={formData.primary_skills_name}
-          onChange={handleChange}
-          placeholder="Primary Skills (e.g., JavaScript)"
-          style={styles.input}
-          required
-        />
-        <input
-          type="text"
-          name="secondary_skills_name"
-          value={formData.secondary_skills_name}
-          onChange={handleChange}
-          placeholder="Secondary Skills (e.g., React)"
-          style={styles.input}
-          required
-        />
-        <input
-          type="text"
-          name="other_skills_name"
-          value={formData.other_skills_name}
-          onChange={handleChange}
-          placeholder="Other Skills (e.g., Docker)"
-          style={styles.input}
-          required
-        />
+        {/* Sliders for Skills */}
         <div style={styles.sliderContainer}>
           <label>Primary Skills: {formData.primary_skills}%</label>
           <input
@@ -211,12 +191,70 @@ function JobPosting() {
             style={styles.slider}
           />
         </div>
+
+        {/* Toggles */}
+        <div style={styles.toggleRow}>
+          <label>Research Oriented:</label>
+          <Switch
+            checked={formData.research_oriented}
+            onChange={() => handleToggle("research_oriented")}
+          />
+        </div>
+        <div style={styles.toggleRow}>
+          <label>Experience Required:</label>
+          <Switch
+            checked={formData.experience_required}
+            onChange={() => handleToggle("experience_required")}
+          />
+          {formData.experience_required && (
+            <div style={styles.sliderContainer}>
+              <label>Years: {formData.experience_years}</label>
+              <input
+                type="range"
+                min="0"
+                max="20"
+                value={formData.experience_years}
+                onChange={(e) => handleExperienceSlider(e.target.value)}
+                style={styles.slider}
+              />
+            </div>
+          )}
+        </div>
+        <div style={styles.toggleRow}>
+          <label>Consider Hackathon Participation:</label>
+          <Switch
+            checked={formData.hackathon_participation}
+            onChange={() => handleToggle("hackathon_participation")}
+          />
+        </div>
+        <div style={styles.toggleRow}>
+          <label>Require Certifications:</label>
+          <Switch
+            checked={formData.require_certifications}
+            onChange={() => handleToggle("require_certifications")}
+          />
+        </div>
+
+        {/* Conditional Certification Input */}
+        {formData.require_certifications && (
+          <div style={styles.sliderContainer}>
+            <input
+              type="text"
+              name="certifications"
+              value={formData.certifications}
+              onChange={handleChange}
+              placeholder="Enter required certifications (e.g., AWS Certified, PMP)"
+              style={styles.input}
+            />
+          </div>
+        )}
+
         <input
           type="text"
           name="package"
           value={formData.package}
           onChange={handleChange}
-          placeholder="Package"
+          placeholder="Package in LPA only"
           style={styles.input}
           required
         />
@@ -225,11 +263,13 @@ function JobPosting() {
           name="stipend_amount"
           value={formData.stipend_amount}
           onChange={handleChange}
-          placeholder="Stipend Amount"
+          placeholder="Stipend Amount for interns if available"
           style={styles.input}
-          required
+          
         />
-        <button type="submit" style={styles.button}>Create Job Posting</button>
+        <button type="submit" style={styles.button}>
+          Create Job Posting
+        </button>
       </form>
       {message && <div style={styles.successMessage}>{message}</div>}
       {error && <div style={styles.errorMessage}>Error: {error}</div>}
@@ -237,68 +277,127 @@ function JobPosting() {
   );
 }
 
+// Add the same `styles` object from before for styling, but enhance toggle buttons' appearance.
+
+
+
+
 const styles = {
   container: {
-    maxWidth: '600px',
-    margin: '0 auto',
-    padding: '20px',
-    backgroundColor: '#f9f9f9',
-    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
-    borderRadius: '10px'
+    maxWidth: '650px',
+    margin: '40px auto',
+    padding: '30px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+    borderRadius: '12px',
+    fontFamily: "'Roboto', sans-serif"
   },
   heading: {
     textAlign: 'center',
-    color: '#333',
-    marginBottom: '20px'
+    color: '#4A4A4A',
+    fontSize: '24px',
+    fontWeight: 'bold',
+    marginBottom: '25px'
   },
   form: {
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
+    gap: '20px'
   },
   input: {
     width: '100%',
-    padding: '12px',
-    marginBottom: '15px',
-    border: '1px solid #ccc',
-    borderRadius: '5px',
-    fontSize: '16px'
+    padding: '14px',
+    marginBottom: '10px',
+    border: '1px solid #dcdcdc',
+    borderRadius: '6px',
+    fontSize: '16px',
+    backgroundColor: '#FAFAFA',
+    transition: 'border-color 0.3s',
+    outline: 'none',
+    ':focus': {
+      borderColor: '#007BFF',
+    },
   },
   textarea: {
     width: '100%',
-    padding: '12px',
+    padding: '14px',
     marginBottom: '15px',
-    border: '1px solid #ccc',
-    borderRadius: '5px',
+    border: '1px solid #dcdcdc',
+    borderRadius: '6px',
     fontSize: '16px',
-    minHeight: '100px',
-    resize: 'vertical'
+    backgroundColor: '#FAFAFA',
+    minHeight: '120px',
+    resize: 'vertical',
+    transition: 'border-color 0.3s',
+    outline: 'none',
+    ':focus': {
+      borderColor: '#007BFF',
+    },
   },
   sliderContainer: {
-    marginBottom: '15px'
+    marginBottom: '20px',
+    textAlign: 'left',
   },
   slider: {
-    width: '100%'
+    width: '100%',
+    appearance: 'none',
+    height: '6px',
+    background: '#e0e0e0',
+    outline: 'none',
+    borderRadius: '5px',
+    transition: 'background-color 0.3s',
+    cursor: 'pointer',
+    '::-webkit-slider-thumb': {
+      appearance: 'none',
+      width: '16px',
+      height: '16px',
+      borderRadius: '50%',
+      background: '#007BFF',
+      cursor: 'pointer',
+    },
+  },
+  toggleRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '10px 0',
+    borderBottom: '1px solid #f0f0f0'
+  },
+  toggleLabel: {
+    fontSize: '16px',
+    fontWeight: '500',
+    color: '#4A4A4A',
   },
   button: {
-    padding: '10px 20px',
+    padding: '12px 20px',
     backgroundColor: '#007BFF',
-    color: 'white',
-    fontSize: '16px',
+    color: '#FFFFFF',
+    fontSize: '18px',
+    fontWeight: 'bold',
     border: 'none',
-    borderRadius: '5px',
+    borderRadius: '6px',
     cursor: 'pointer',
-    transition: 'background-color 0.3s ease'
+    textAlign: 'center',
+    transition: 'background-color 0.3s ease',
+    ':hover': {
+      backgroundColor: '#0056b3',
+    },
   },
   successMessage: {
-    color: 'green',
+    color: '#28A745',
+    fontSize: '16px',
+    fontWeight: '500',
     marginTop: '20px',
-    textAlign: 'center'
+    textAlign: 'center',
   },
   errorMessage: {
-    color: 'red',
+    color: '#DC3545',
+    fontSize: '16px',
+    fontWeight: '500',
     marginTop: '20px',
-    textAlign: 'center'
+    textAlign: 'center',
   }
 };
+
 
 export default JobPosting;
