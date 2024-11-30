@@ -623,89 +623,88 @@ def create_job_posting():
         if not data:
             logging.error("No JSON data received.")
             return jsonify({'error': 'No data provided'}), 400
-        
+
         logging.info("Received data: %s", data)
 
         # Step 2: Validate required fields in the request body
         company_name = data.get('company_name')
         job_description = data.get('job_description')
         role = data.get('role')
-        primary_skills = data.get('primary_skills')
-        secondary_skills = data.get('secondary_skills')
-        other_skills = data.get('other_skills')
+        primary_skills = data.get('primary_skills_name')  # Updated field name
+        secondary_skills = data.get('secondary_skills_name')  # Updated field name
+        other_skills = data.get('other_skills_name')  # Updated field name
         package = data.get('package')
         stipend_amount = data.get('stipend_amount')
 
         pri_skills_wt = data.get('pri_skills_wt')
         sec_skills_wt = data.get('sec_skills_wt')
         oth_skills_wt = data.get('oth_skills_wt')
-        pri_wm_skills_wt = data.get('pri_wm_skills_wt')
-        sec_wn_skills_wt = data.get('sec_wn_skills_wt')
-        pri_proj_skills_wt = data.get('pri_proj_skills_wt')
-        sec_proj_skills_wt = data.get('sec_proj_skills_wt')
-        fil_wt = data.get('fil_wt')
-        certi_wt = data.get('certi_wt')
-        hack_wt = data.get('hack_wt')
 
-        # Check for missing required fields and log them
+        # Validate required fields
         required_fields = ['company_name', 'job_description', 'role', 'primary_skills']
-        missing_fields = [field for field in required_fields if not data.get(field)]
+        missing_fields = [field for field in required_fields if not locals().get(field)]
         if missing_fields:
             logging.error("Missing required fields: %s", missing_fields)
             return jsonify({'error': f'Missing required fields: {missing_fields}'}), 400
 
-        # Step 3: Validate numeric fields (package and stipend_amount) are of correct type
+        # Step 3: Validate numeric fields (package and stipend_amount)
         try:
-            # Ensure that package and stipend_amount are either None or valid floats
             package = float(package) if package else None
             stipend_amount = float(stipend_amount) if stipend_amount else None
         except ValueError:
-            logging.error(f"Invalid data type for numeric fields: package - {package}, stipend_amount - {stipend_amount}")
+            logging.error("Invalid numeric field: package or stipend_amount.")
             return jsonify({'error': 'Package and stipend_amount must be valid numbers'}), 400
 
         # Step 4: Get the HR's user_id from the session
         user_id = session.get('user_id_hr')
         if not user_id:
-            logging.error("User not logged in. HR user ID is missing.")
+            logging.error("HR user not logged in.")
             return jsonify({'error': 'HR user must be logged in to create a job posting'}), 401
-        
-        logging.info(f"Using HR user ID: {user_id} from session.")
+
+        logging.info(f"HR user ID: {user_id}")
 
         # Step 5: Connect to the database
         cursor = mysql.connection.cursor()
-        logging.info("Database connection established successfully.")
+        logging.info("Database connection established.")
 
-        # Step 6: Execute the database insert query for Job_Postings
+        # Step 6: Insert into Job_Postings table
         try:
-            job_posting_query = '''INSERT INTO Job_Postings (user_id, title, description, primary_skills, secondary_skills, other_skills, company_name, package, stipend_amount) 
-                                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)'''
+            job_posting_query = '''
+                INSERT INTO Job_Postings (user_id, title, description, primary_skills, secondary_skills, other_skills, company_name, package, stipend_amount) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            '''
             cursor.execute(job_posting_query, (user_id, role, job_description, primary_skills, secondary_skills, other_skills, company_name, package, stipend_amount))
-            job_id = cursor.lastrowid  # Retrieve the ID of the newly inserted job posting
-            
-            # Step 7: Insert data into the Weightages table
-            weightages_query = '''INSERT INTO Weightages (job_id, pri_skills_wt, sec_skills_wt, oth_skills_wt, pri_wm_skills_wt, sec_wn_skills_wt, pri_proj_skills_wt, sec_proj_skills_wt, fil_wt, certi_wt, hack_wt) 
-                                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'''
-            cursor.execute(weightages_query, (job_id, pri_skills_wt, sec_skills_wt, oth_skills_wt, pri_wm_skills_wt, sec_wn_skills_wt, pri_proj_skills_wt, sec_proj_skills_wt, fil_wt, certi_wt, hack_wt))
-            
+            job_id = cursor.lastrowid
+            logging.info(f"Job posting created with ID: {job_id}")
+
+            # Step 7: Insert into Weightages table
+            weightages_query = '''
+                INSERT INTO Weightages (job_id, pri_skills_wt, sec_skills_wt, oth_skills_wt, pri_wm_skills_wt, sec_wn_skills_wt, pri_proj_skills_wt, sec_proj_skills_wt, fil_wt, certi_wt, hack_wt) 
+                VALUES (%s, %s, %s, %s, 5, 3, 5, 3, 5, 5, 4)
+            '''
+            cursor.execute(weightages_query, (job_id, pri_skills_wt, sec_skills_wt, oth_skills_wt))
+
+            # Commit changes to the database
             mysql.connection.commit()
-            logging.info("Job posting and weightages created successfully in the database.")
-            return jsonify({'message': 'Job posting and weightages created successfully'}), 201
-        
+            logging.info("Job posting and weightages inserted successfully.")
+
+            return jsonify({'message': 'Job posting created successfully'}), 201
+
         except Exception as e:
-            # Step 8: Handle any database-related errors
+            # Handle database errors
             mysql.connection.rollback()
-            logging.error(f"Database insertion error: {str(e)}")
-            return jsonify({'error': f"Database error: {str(e)}"}), 500
-        
+            logging.error(f"Database error: {e}")
+            return jsonify({'error': 'Database error occurred'}), 500
+
         finally:
-            # Step 9: Ensure cursor is closed
             cursor.close()
             logging.info("Database cursor closed.")
 
     except Exception as e:
-        # Step 10: Catch any unexpected errors
-        logging.error(f"An unexpected error occurred: {str(e)}")
-        return jsonify({'error': f"An unexpected error occurred: {str(e)}"}), 500
+        # Handle unexpected errors
+        logging.error(f"Unexpected error: {e}")
+        return jsonify({'error': 'An unexpected error occurred'}), 500
+
 
 
 @app.route('/available-jobs', methods=['GET'])

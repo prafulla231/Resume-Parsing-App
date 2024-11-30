@@ -1,25 +1,17 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Switch from "react-switch"; // Install react-switch with `npm install react-switch`
 
 function JobPosting() {
   const [formData, setFormData] = useState({
     company_name: "",
     job_description: "",
     role: "",
-    primary_skills: 33,
-    secondary_skills: 33,
-    other_skills: 34,
     primary_skills_name: "",
     secondary_skills_name: "",
     other_skills_name: "",
-    research_oriented: false,
-    experience_required: false,
-    experience_years: 0,
-    hackathon_participation: false,
-    require_certifications: false,
-    certifications: "", // Add certifications field
+    pri_skills_wt: 33,
+    sec_skills_wt: 33,
+    oth_skills_wt: 34,
     package: "",
     stipend_amount: "",
   });
@@ -34,14 +26,14 @@ function JobPosting() {
     const newValue = parseInt(value, 10);
 
     const total =
-      formData.primary_skills +
-      formData.secondary_skills +
-      formData.other_skills;
+      formData.pri_skills_wt +
+      formData.sec_skills_wt +
+      formData.oth_skills_wt;
 
     const otherSliders = {
-      primary_skills: ["secondary_skills", "other_skills"],
-      secondary_skills: ["primary_skills", "other_skills"],
-      other_skills: ["primary_skills", "secondary_skills"],
+      pri_skills_wt: ["sec_skills_wt", "oth_skills_wt"],
+      sec_skills_wt: ["pri_skills_wt", "oth_skills_wt"],
+      oth_skills_wt: ["pri_skills_wt", "sec_skills_wt"],
     };
 
     const [slider1, slider2] = otherSliders[name];
@@ -71,13 +63,6 @@ function JobPosting() {
     setError("");
   };
 
-  const handleToggle = (fieldName) => {
-    setFormData((prevData) => ({
-      ...prevData,
-      [fieldName]: !prevData[fieldName],
-    }));
-  };
-
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormData((prevData) => ({
@@ -85,13 +70,6 @@ function JobPosting() {
       [name]: value,
     }));
     setError("");
-  };
-
-  const handleExperienceSlider = (value) => {
-    setFormData((prevData) => ({
-      ...prevData,
-      experience_years: value,
-    }));
   };
 
   const handleSubmit = async (event) => {
@@ -154,107 +132,78 @@ function JobPosting() {
           style={styles.input}
           required
         />
-        {/* Sliders for Skills */}
-        <div style={styles.sliderContainer}>
-          <label>Primary Skills: {formData.primary_skills}%</label>
-          <input
-            type="range"
-            name="primary_skills"
-            min="0"
-            max="100"
-            value={formData.primary_skills}
-            onChange={handleSliderChange}
-            style={styles.slider}
-          />
-        </div>
-        <div style={styles.sliderContainer}>
-          <label>Secondary Skills: {formData.secondary_skills}%</label>
-          <input
-            type="range"
-            name="secondary_skills"
-            min="0"
-            max="100"
-            value={formData.secondary_skills}
-            onChange={handleSliderChange}
-            style={styles.slider}
-          />
-        </div>
-        <div style={styles.sliderContainer}>
-          <label>Other Skills: {formData.other_skills}%</label>
-          <input
-            type="range"
-            name="other_skills"
-            min="0"
-            max="100"
-            value={formData.other_skills}
-            onChange={handleSliderChange}
-            style={styles.slider}
-          />
-        </div>
 
-        {/* Toggles */}
-        <div style={styles.toggleRow}>
-          <label>Research Oriented:</label>
-          <Switch
-            checked={formData.research_oriented}
-            onChange={() => handleToggle("research_oriented")}
-          />
-        </div>
-        <div style={styles.toggleRow}>
-          <label>Experience Required:</label>
-          <Switch
-            checked={formData.experience_required}
-            onChange={() => handleToggle("experience_required")}
-          />
-          {formData.experience_required && (
-            <div style={styles.sliderContainer}>
-              <label>Years: {formData.experience_years}</label>
-              <input
-                type="range"
-                min="0"
-                max="20"
-                value={formData.experience_years}
-                onChange={(e) => handleExperienceSlider(e.target.value)}
-                style={styles.slider}
-              />
-            </div>
-          )}
-        </div>
-        <div style={styles.toggleRow}>
-          <label>Consider Hackathon Participation:</label>
-          <Switch
-            checked={formData.hackathon_participation}
-            onChange={() => handleToggle("hackathon_participation")}
-          />
-        </div>
-        <div style={styles.toggleRow}>
-          <label>Require Certifications:</label>
-          <Switch
-            checked={formData.require_certifications}
-            onChange={() => handleToggle("require_certifications")}
-          />
-        </div>
+        {/* Text Inputs for Skills */}
+        <input
+          type="text"
+          name="primary_skills_name"
+          value={formData.primary_skills_name}
+          onChange={handleChange}
+          placeholder="Primary Skills (e.g., JavaScript, React)"
+          style={styles.input}
+          required
+        />
+        <input
+          type="text"
+          name="secondary_skills_name"
+          value={formData.secondary_skills_name}
+          onChange={handleChange}
+          placeholder="Secondary Skills (e.g., Node.js, Python)"
+          style={styles.input}
+        />
+        <input
+          type="text"
+          name="other_skills_name"
+          value={formData.other_skills_name}
+          onChange={handleChange}
+          placeholder="Other Skills (e.g., Communication, Problem-Solving)"
+          style={styles.input}
+        />
 
-        {/* Conditional Certification Input */}
-        {formData.require_certifications && (
-          <div style={styles.sliderContainer}>
-            <input
-              type="text"
-              name="certifications"
-              value={formData.certifications}
-              onChange={handleChange}
-              placeholder="Enter required certifications (e.g., AWS Certified, PMP)"
-              style={styles.input}
-            />
-          </div>
-        )}
+        {/* Sliders for Weightages */}
+        <div style={styles.sliderContainer}>
+          <label>Primary Skills Weightage: {formData.pri_skills_wt}%</label>
+          <input
+            type="range"
+            name="pri_skills_wt"
+            min="0"
+            max="100"
+            value={formData.pri_skills_wt}
+            onChange={handleSliderChange}
+            style={styles.slider}
+          />
+        </div>
+        <div style={styles.sliderContainer}>
+          <label>Secondary Skills Weightage: {formData.sec_skills_wt}%</label>
+          <input
+            type="range"
+            name="sec_skills_wt"
+            min="0"
+            max="100"
+            value={formData.sec_skills_wt}
+            onChange={handleSliderChange}
+            style={styles.slider}
+          />
+        </div>
+        <div style={styles.sliderContainer}>
+          <label>Other Skills Weightage: {formData.oth_skills_wt}%</label>
+          <input
+            type="range"
+            name="oth_skills_wt"
+            min="0"
+            max="100"
+            value={formData.oth_skills_wt}
+            onChange={handleSliderChange}
+            style={styles.slider}
+          />
+        </div>
 
         <input
           type="text"
           name="package"
           value={formData.package}
           onChange={handleChange}
-          placeholder="Package in LPA only"
+          placeholder="Package in LPA"
           style={styles.input}
           required
         />
@@ -263,10 +212,10 @@ function JobPosting() {
           name="stipend_amount"
           value={formData.stipend_amount}
           onChange={handleChange}
-          placeholder="Stipend Amount for interns if available"
+          placeholder="Stipend Amount (for interns)"
           style={styles.input}
-          
         />
+
         <button type="submit" style={styles.button}>
           Create Job Posting
         </button>
@@ -276,6 +225,11 @@ function JobPosting() {
     </div>
   );
 }
+
+
+
+
+
 
 // Add the same `styles` object from before for styling, but enhance toggle buttons' appearance.
 
